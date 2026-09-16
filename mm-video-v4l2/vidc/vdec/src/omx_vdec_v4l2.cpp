@@ -6669,7 +6669,6 @@ OMX_ERRORTYPE omx_vdec::free_output_buffer(OMX_BUFFERHEADERTYPE *bufferHdr)
 #endif
                         } else {
                             drv_ctx.op_buf_ion_info[index].dev_fd = -1;
-                            drv_ctx.op_buf_ion_info[index].ion_alloc_data.handle = 0;
                             drv_ctx.op_buf_ion_info[index].data_fd = -1;
                         }
                         drv_ctx.op_buf_map_info[index].free_buffer = false;
