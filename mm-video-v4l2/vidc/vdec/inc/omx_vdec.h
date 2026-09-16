@@ -371,6 +371,15 @@ struct vdec_fillbuffer_cmd {
     void *client_data;
 };
 
+/* This kernel's unified msm_vidc UAPI omits the legacy output-format enum. */
+enum vdec_output_format {
+    VDEC_YUV_FORMAT_NV12 = 0x1,
+    VDEC_YUV_FORMAT_TILE_4x2 = 0x2,
+    VDEC_YUV_FORMAT_NV12_UBWC = 0x3,
+    VDEC_YUV_FORMAT_NV12_TP10_UBWC = 0x4,
+    VDEC_YUV_FORMAT_P010_VENUS = 0x5,
+};
+
 enum vdec_bufferflush {
     VDEC_FLUSH_TYPE_INPUT,
     VDEC_FLUSH_TYPE_OUTPUT,

@@ -8560,7 +8560,7 @@ int venc_dev::venc_dev_pq::fill_pq_stats(struct v4l2_buffer buf,
     DEBUG_PRINT_HIGH("Final Output fd = %d, data_offset = %d", output.fd, output.data_offset);
 
     if (pConfig.a_qp.roi_enabled) {
-        roi_input.fd =  roi_extradata_info.ion.fd_ion_data.fd;
+        roi_input.fd =  roi_extradata_info.ion.data_fd;
         roi_input.data_offset =  0;
         roi_input.alloc_len = roi_extradata_info.size;
         roi_input.filled_len = 0;
