@@ -1,5 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
+include $(LIBION_HEADER_PATH_WRAPPER)
 
 # ---------------------------------------------------------------------------------
 # 				Common definitons
@@ -103,6 +104,7 @@ endif
 
 # Common Includes
 libmm-venc-inc      := $(LOCAL_PATH)/inc
+libmm-venc-inc      += $(LIBION_HEADER_PATHS)
 libmm-venc-inc      += $(call project-path-for,qcom-media)/mm-video-v4l2/vidc/common/inc
 libmm-venc-inc      += $(call project-path-for,qcom-media)/mm-core/inc
 libmm-venc-inc      += $(call project-path-for,qcom-media)/libstagefrighthw
@@ -149,7 +151,7 @@ LOCAL_C_INCLUDES                := $(libmm-venc-inc)
 LOCAL_ADDITIONAL_DEPENDENCIES   := $(libmm-venc-add-dep)
 
 LOCAL_PRELINK_MODULE      := false
-LOCAL_SHARED_LIBRARIES    := liblog libcutils libdl
+LOCAL_SHARED_LIBRARIES    := liblog libcutils libdl libion
 
 ifeq ($(BOARD_USES_ADRENO), true)
 LOCAL_SHARED_LIBRARIES    += libc2dcolorconvert
@@ -191,7 +193,7 @@ LOCAL_C_INCLUDES                := $(libmm-venc-inc)
 LOCAL_ADDITIONAL_DEPENDENCIES   := $(libmm-venc-add-dep)
 
 LOCAL_PRELINK_MODULE      := false
-LOCAL_SHARED_LIBRARIES    := liblog libcutils libdl
+LOCAL_SHARED_LIBRARIES    := liblog libcutils libdl libion
 LOCAL_SHARED_LIBRARIES    += libMpeg4SwEncoder
 ifeq ($(BOARD_USES_ADRENO), true)
 LOCAL_SHARED_LIBRARIES    += libc2dcolorconvert
