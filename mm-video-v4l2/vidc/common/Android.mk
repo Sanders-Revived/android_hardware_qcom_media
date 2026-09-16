@@ -17,7 +17,8 @@ libmm-vidc-def += -Dinline=__inline
 libmm-vidc-def += -D_ANDROID_
 libmm-vidc-def += -Werror
 libmm-vidc-def += -D_ANDROID_ICS_
-ifeq ($(TARGET_KERNEL_VERSION), 4.9)
+ifeq ($(TARGET_KERNEL_VERSION),$(filter $(TARGET_KERNEL_VERSION),4.9 4.19))
+# 4.19 exports the unified media/msm_vidc.h UAPI selected by this macro.
 libmm-vidc-def += -D_TARGET_KERNEL_VERSION_49_
 endif
 # ---------------------------------------------------------------------------------

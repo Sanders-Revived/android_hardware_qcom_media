@@ -47,7 +47,8 @@ libmm-venc-def += -DMAX_RES_1080P_EBI
 endif
 endif
 
-ifeq ($(TARGET_KERNEL_VERSION), 4.9)
+ifeq ($(TARGET_KERNEL_VERSION),$(filter $(TARGET_KERNEL_VERSION),4.9 4.19))
+# 4.19 exports the unified media/msm_vidc.h UAPI selected by this macro.
 libmm-venc-def += -D_TARGET_KERNEL_VERSION_49_
 endif
 

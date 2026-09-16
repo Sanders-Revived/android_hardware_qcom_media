@@ -26,7 +26,8 @@ libmm-vdec-def += -D_MSM8974_
 libmm-vdec-def += -DPROCESS_EXTRADATA_IN_OUTPUT_PORT
 libmm-vdec-def += -DMAX_RES_1080P
 libmm-vdec-def += -DMAX_RES_1080P_EBI
-ifeq ($(TARGET_KERNEL_VERSION), 4.9)
+ifeq ($(TARGET_KERNEL_VERSION),$(filter $(TARGET_KERNEL_VERSION),4.9 4.19))
+# 4.19 exports the unified media/msm_vidc.h UAPI selected by this macro.
 libmm-vdec-def += -D_TARGET_KERNEL_VERSION_49_
 endif
 TARGETS_THAT_USE_HEVC_ADSP_HEAP := msm8226 msm8974
