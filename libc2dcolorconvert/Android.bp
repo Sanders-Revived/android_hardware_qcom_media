@@ -1,3 +1,9 @@
+soong_namespace {
+    imports: [
+        "hardware/qcom-caf/msm8996/display",
+    ],
+}
+
 cc_library_shared {
     name: "libc2dcolorconvert",
     vendor: true,
