@@ -1,3 +1,10 @@
+soong_namespace {
+    imports: [
+        "hardware/qcom-caf/msm8996/display",
+        "hardware/qcom-caf/msm8996/media/libc2dcolorconvert",
+    ],
+}
+
 cc_library_static {
     name: "libOmxVidcCommon",
     vendor: true,
