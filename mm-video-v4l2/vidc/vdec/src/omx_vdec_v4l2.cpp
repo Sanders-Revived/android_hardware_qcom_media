@@ -682,8 +682,6 @@ omx_vdec::omx_vdec(): m_error_propogated(false),
     m_pipe_out = -1;
     m_poll_efd = -1;
     drv_ctx.video_driver_fd = -1;
-    drv_ctx.extradata_info.ion.data_fd = -1;
-    drv_ctx.extradata_info.ion.dev_fd = -1;
     /* Assumption is that , to begin with , we have all the frames with decoder */
     DEBUG_PRINT_HIGH("In %u bit OMX vdec Constructor", (unsigned int)sizeof(long) * 8);
     memset(&m_debug,0,sizeof(m_debug));
@@ -794,6 +792,8 @@ omx_vdec::omx_vdec(): m_error_propogated(false),
     memset(&native_buffer, 0 ,(sizeof(struct nativebuffer) * MAX_NUM_INPUT_OUTPUT_BUFFERS));
 #endif
     memset(&drv_ctx.extradata_info, 0, sizeof(drv_ctx.extradata_info));
+    drv_ctx.extradata_info.ion.data_fd = -1;
+    drv_ctx.extradata_info.ion.dev_fd = -1;
 
     /* invalidate m_frame_pack_arrangement */
     memset(&m_frame_pack_arrangement, 0, sizeof(OMX_QCOM_FRAME_PACK_ARRANGEMENT));
@@ -6021,6 +6021,7 @@ OMX_ERRORTYPE omx_vdec::allocate_extradata()
                      (void *)drv_ctx.extradata_info.uaddr,
                      drv_ctx.extradata_info.size);
             free_ion_memory(&drv_ctx.extradata_info.ion);
+            drv_ctx.extradata_info.uaddr = NULL;
         }
         drv_ctx.extradata_info.size = (drv_ctx.extradata_info.size + 4095) & (~4095);
         bool status = alloc_map_ion_memory(
@@ -6034,6 +6035,7 @@ OMX_ERRORTYPE omx_vdec::allocate_extradata()
                                                        drv_ctx.extradata_info.size);
         if (drv_ctx.extradata_info.uaddr == MAP_FAILED) {
             DEBUG_PRINT_ERROR("Failed to map extradata memory");
+            drv_ctx.extradata_info.uaddr = NULL;
             free_ion_memory(&drv_ctx.extradata_info.ion);
             return OMX_ErrorInsufficientResources;
         }
@@ -6056,8 +6058,9 @@ void omx_vdec::free_extradata()
         ion_unmap(drv_ctx.extradata_info.ion.data_fd,
                   (void *)drv_ctx.extradata_info.uaddr,
                   drv_ctx.extradata_info.size);
-        free_ion_memory(&drv_ctx.extradata_info.ion);
+        drv_ctx.extradata_info.uaddr = NULL;
     }
+    free_ion_memory(&drv_ctx.extradata_info.ion);
 #endif
     if (m_other_extradata) {
         free(m_other_extradata);
@@ -7113,7 +7116,7 @@ OMX_ERRORTYPE  omx_vdec::allocate_output_buffer(
                     &op_buf_ion_info_temp[idx],
                     (secure_mode && !secure_scaling_to_non_secure_opb) ?
                     SECURE_FLAGS_OUTPUT_BUFFER : cache_flag);
-            if (op_buf_ion_info_temp[idx].dev_fd < 0) {
+            if (!status) {
                 DEBUG_PRINT_LOW("Failed to allocate chunk %ul size = %d", idx, alloc_size[idx]);
                 break;
             }
@@ -7122,7 +7125,6 @@ OMX_ERRORTYPE  omx_vdec::allocate_output_buffer(
         }
         if (idx != block_count) {
             for (OMX_U32 i = 0; i < idx; i++) {
-                close(pmem_fd[i]);
                 free_ion_memory(&op_buf_ion_info_temp[i]);
             }
             return OMX_ErrorInsufficientResources;
@@ -7162,18 +7164,18 @@ OMX_ERRORTYPE  omx_vdec::allocate_output_buffer(
                 if (pmem_baseaddress_temp[idx] == MAP_FAILED) {
                     DEBUG_PRINT_ERROR("MMAP failed for Size %u for fd = %d",
                             (unsigned int)alloc_size[idx], pmem_fd[idx]);
-#ifdef USE_ION
-                    free_ion_memory(&op_buf_ion_info_temp[idx]);
-#endif
                     break;
                 }
             }
             if (idx != block_count) {
                 for (i = 0; i < idx; i++) {
-                    munmap(pmem_baseaddress_temp[idx], alloc_size[idx]);
-                    close(pmem_fd[i]);
+                    munmap(pmem_baseaddress_temp[i], alloc_size[i]);
+                }
+                for (i = 0; i < block_count; i++) {
 #ifdef USE_ION
                     free_ion_memory(&op_buf_ion_info_temp[i]);
+#else
+                    close(pmem_fd[i]);
 #endif
                 }
                 return OMX_ErrorInsufficientResources;
@@ -13162,7 +13164,7 @@ OMX_ERRORTYPE omx_vdec::allocate_color_convert_buf::free_output_buffer(
         return OMX_ErrorBadParameter;
     }
     if (pmem_fd[index] >= 0) {
-        if (omx->ion_unmap(pmem_fd[index],pmem_baseaddress[index], buffer_size_req != OMX_ErrorNone)) {
+        if (omx->ion_unmap(pmem_fd[index],pmem_baseaddress[index], buffer_size_req) != OMX_ErrorNone) {
             return OMX_ErrorInsufficientResources;
         }
 #ifndef USE_ION
