@@ -2414,6 +2414,10 @@ OMX_ERRORTYPE  omx_venc::component_deinit(OMX_IN OMX_HANDLETYPE hComp)
                 m_state);
     }
 
+    if (handle) {
+        handle->venc_close();
+    }
+
     auto_lock l(m_buf_lock);
     if (m_out_mem_ptr) {
         DEBUG_PRINT_LOW("Freeing the Output Memory");
@@ -2466,9 +2470,7 @@ OMX_ERRORTYPE  omx_venc::component_deinit(OMX_IN OMX_HANDLETYPE hComp)
     m_cmd_q.m_read = m_cmd_q.m_write =0;
     m_etb_q.m_read = m_etb_q.m_write =0;
 
-    DEBUG_PRINT_HIGH("Calling venc_close()");
     if (handle) {
-        handle->venc_close();
         DEBUG_PRINT_HIGH("Deleting HANDLE[%p]", handle);
         delete (handle);
         handle = NULL;
@@ -2787,16 +2789,23 @@ int omx_venc::async_message_process (void *context, void* message)
             break;
         case VEN_MSG_OUTPUT_BUFFER_DONE:
         {
-            omxhdr = (OMX_BUFFERHEADERTYPE*)m_sVenc_msg->buf.clientdata;
-            OMX_U32 bufIndex = (OMX_U32)(omxhdr - omx->m_out_mem_ptr);
+            auto_lock l(omx->m_buf_lock);
+            OMX_U32 bufIndex = m_sVenc_msg->buf.index;
+
+            if (!omx->m_out_mem_ptr || !omx->m_pOutput_pmem ||
+                    bufIndex >= omx->m_sOutPortDef.nBufferCountActual ||
+                    BITMASK_ABSENT(&(omx->m_out_bm_count), bufIndex)) {
+                DEBUG_PRINT_HIGH("Ignoring FBD for released output buffer %u", bufIndex);
+                break;
+            }
+
+            omxhdr = &omx->m_out_mem_ptr[bufIndex];
+            m_sVenc_msg->buf.ptrbuffer = (OMX_U8 *)omx->m_pOutput_pmem[bufIndex].buffer;
+            if (omxhdr->nFilledLen)
+                m_sVenc_msg->buf.flags |= OMX_BUFFERFLAG_ENDOFFRAME;
 
             if ( (omxhdr != NULL) &&
                     (bufIndex  < omx->m_sOutPortDef.nBufferCountActual)) {
-                auto_lock l(omx->m_buf_lock);
-                if (BITMASK_ABSENT(&(omx->m_out_bm_count), bufIndex)) {
-                    DEBUG_PRINT_ERROR("Recieved FBD for buffer that is already freed !");
-                    break;
-                }
                 if (!omx->is_secure_session() && (m_sVenc_msg->buf.len <=  omxhdr->nAllocLen)) {
                     omxhdr->nFilledLen = m_sVenc_msg->buf.len;
                     omxhdr->nOffset = m_sVenc_msg->buf.offset;

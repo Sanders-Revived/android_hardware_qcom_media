@@ -400,12 +400,10 @@ void* venc_dev::async_venc_message_thread (void *input)
             while (!ioctl(pfds[0].fd, VIDIOC_DQBUF, &v4l2_buf)) {
                 venc_msg.msgcode=VEN_MSG_OUTPUT_BUFFER_DONE;
                 venc_msg.statuscode=VEN_S_SUCCESS;
-                omxhdr=omx_venc_base->m_out_mem_ptr+v4l2_buf.index;
+                venc_msg.buf.index = v4l2_buf.index;
                 venc_msg.buf.len= v4l2_buf.m.planes->bytesused;
                 venc_msg.buf.offset = v4l2_buf.m.planes->data_offset;
                 venc_msg.buf.flags = 0;
-                venc_msg.buf.ptrbuffer = (OMX_U8 *)omx_venc_base->m_pOutput_pmem[v4l2_buf.index].buffer;
-                venc_msg.buf.clientdata=(void*)omxhdr;
                 venc_msg.buf.timestamp = (uint64_t) v4l2_buf.timestamp.tv_sec * (uint64_t) 1000000 + (uint64_t) v4l2_buf.timestamp.tv_usec;
 
                 /* TODO: ideally report other types of frames as well
@@ -432,9 +430,6 @@ void* venc_dev::async_venc_message_thread (void *input)
 
                 if (omx->handle->num_output_planes > 1 && v4l2_buf.m.planes->bytesused)
                     venc_msg.buf.flags |= OMX_BUFFERFLAG_EXTRADATA;
-
-                if (omxhdr->nFilledLen)
-                    venc_msg.buf.flags |= OMX_BUFFERFLAG_ENDOFFRAME;
 
                 omx->handle->fbd++;
                 stats.bytes_generated += venc_msg.buf.len;
@@ -1317,12 +1312,10 @@ static int async_message_process_v4l2 (void *context, void* message)
 
     if (VEN_MSG_OUTPUT_BUFFER_DONE == vencmsg->msgcode) {
         v4l2_buf = (struct v4l2_buffer *)vencmsg->buf.clientdata;
-        omxhdr=omx_venc_base->m_out_mem_ptr+v4l2_buf->index;
+        vencmsg->buf.index = v4l2_buf->index;
         vencmsg->buf.len= v4l2_buf->m.planes->bytesused;
         vencmsg->buf.offset = v4l2_buf->m.planes->data_offset;
         vencmsg->buf.flags = 0;
-        vencmsg->buf.ptrbuffer = (OMX_U8 *)omx_venc_base->m_pOutput_pmem[v4l2_buf->index].buffer;
-        vencmsg->buf.clientdata=(void*)omxhdr;
         vencmsg->buf.timestamp = (uint64_t) v4l2_buf->timestamp.tv_sec * (uint64_t) 1000000 + (uint64_t) v4l2_buf->timestamp.tv_usec;
         if (v4l2_buf->flags & V4L2_QCOM_BUF_FLAG_IDRFRAME)
             vencmsg->buf.flags |= QOMX_VIDEO_PictureTypeIDR;
@@ -1339,8 +1332,6 @@ static int async_message_process_v4l2 (void *context, void* message)
         if (vencdev->num_output_planes > 1 && v4l2_buf->m.planes->bytesused)
             vencmsg->buf.flags |= OMX_BUFFERFLAG_EXTRADATA;
 
-        if (omxhdr->nFilledLen)
-            vencmsg->buf.flags |= OMX_BUFFERFLAG_ENDOFFRAME;
         vencdev->fbd++;
     } else if (VEN_MSG_INPUT_BUFFER_DONE == vencmsg->msgcode) {
         v4l2_buf = (struct v4l2_buffer *)vencmsg->buf.clientdata;

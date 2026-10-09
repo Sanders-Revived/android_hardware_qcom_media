@@ -361,6 +361,7 @@ struct venc_bufferpayload{
 };
 
 struct venc_buffer{
+ unsigned long    index;
  unsigned char *ptrbuffer;
  unsigned long    sz;
  unsigned long    len;
